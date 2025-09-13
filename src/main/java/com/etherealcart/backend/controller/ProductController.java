@@ -16,6 +16,8 @@ public class ProductController {
     @Autowired
     private ProductService productService;
 
+    Object obj = new Object();
+
     @PostMapping
     public ResponseEntity<Product> createProduct(@RequestBody Product product) {
         return ResponseEntity.ok(productService.createProduct(product));
