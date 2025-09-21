@@ -1,5 +1,8 @@
 package com.etherealcart.backend.service;
 
+import com.etherealcart.backend.dto.CategoryDTO;
+import com.etherealcart.backend.exceptions.ExceptionFactory;
+import com.etherealcart.backend.mapper.CategoryMapper;
 import com.etherealcart.backend.model.Category;
 import com.etherealcart.backend.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,54 +10,75 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
     @Autowired
     private CategoryRepository categoryRepository;
 
-    public Category create(Category category) {
-        if (category.getName() == null || category.getSlug() == null) {
-            throw new IllegalArgumentException("Name and slug are required");
+    public CategoryDTO create(CategoryDTO categoryDTO) {
+        if (categoryDTO.getName() == null || categoryDTO.getSlug() == null) {
+            throw ExceptionFactory.missingCategoryFields("Name and slug");
         }
-        return categoryRepository.save(category);
+
+        if (categoryRepository.findBySlug(categoryDTO.getSlug()).isPresent()) {
+            throw ExceptionFactory.duplicateSlug(categoryDTO.getSlug());
+        }
+
+        Category category = CategoryMapper.toEntity(categoryDTO);
+        Category saved = categoryRepository.save(category);
+        return CategoryMapper.toDTO(saved, false);
     }
 
-    public List<Category> list() {
-        return categoryRepository.findAll();
+    public List<CategoryDTO> list() {
+        return categoryRepository.findAll()
+                .stream()
+                .map(c -> CategoryMapper.toDTO(c, false))
+                .collect(Collectors.toList());
     }
 
-    public List<Category> listWithProducts() {
-        return categoryRepository.findCategoriesWithProducts();
+    public List<CategoryDTO> listWithProducts() {
+        return categoryRepository.findCategoriesWithProducts()
+                .stream()
+                .map(c -> CategoryMapper.toDTO(c, true))
+                .collect(Collectors.toList());
     }
 
-    public Optional<Category> get(Long id) {
-        return categoryRepository.findById(id);
+    public Optional<CategoryDTO> get(Long id) {
+        return categoryRepository.findById(id)
+                .map(c -> CategoryMapper.toDTO(c, true));
     }
 
-    public Optional<Category> getBySlug(String slug) {
-        return categoryRepository.findBySlug(slug);
+    public Optional<CategoryDTO> getBySlug(String slug) {
+        return categoryRepository.findBySlug(slug)
+                .map(c -> CategoryMapper.toDTO(c, true));
     }
 
-    public Category update(Long id, Category updated) {
+    public CategoryDTO update(Long id, CategoryDTO updatedDTO) {
         Category existing = categoryRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Category not found with ID: " + id));
-        existing.setName(updated.getName() != null ? updated.getName() : existing.getName());
-        existing.setSlug(updated.getSlug() != null ? updated.getSlug() : existing.getSlug());
-        existing.setDescription(updated.getDescription() != null ? updated.getDescription() : existing.getDescription());
-        return categoryRepository.save(existing);
+                .orElseThrow(() -> ExceptionFactory.categoryNotFound(id));
+
+        existing.setName(updatedDTO.getName() != null ? updatedDTO.getName() : existing.getName());
+        existing.setSlug(updatedDTO.getSlug() != null ? updatedDTO.getSlug() : existing.getSlug());
+        existing.setDescription(updatedDTO.getDescription() != null ? updatedDTO.getDescription() : existing.getDescription());
+        existing.setImage(updatedDTO.getImage() != null ? updatedDTO.getImage() : existing.getImage());
+
+        Category saved = categoryRepository.save(existing);
+        return CategoryMapper.toDTO(saved, false);
     }
 
     public void delete(Long id) {
         if (!categoryRepository.existsById(id)) {
-            throw new IllegalArgumentException("Category not found with ID: " + id);
+            throw ExceptionFactory.categoryNotFound(id);
         }
         categoryRepository.deleteById(id);
     }
 
-    public List<Category> searchByName(String name) {
-        return categoryRepository.findByNameContainingIgnoreCase(name);
+    public List<CategoryDTO> searchByName(String name) {
+        return categoryRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(c -> CategoryMapper.toDTO(c, false))
+                .collect(Collectors.toList());
     }
 }
-
-

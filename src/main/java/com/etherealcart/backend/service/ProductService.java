@@ -1,84 +1,161 @@
 package com.etherealcart.backend.service;
+
+import com.etherealcart.backend.dto.ProductDTO;
+import com.etherealcart.backend.exceptions.ExceptionFactory;
+import com.etherealcart.backend.mapper.ProductMapper;
+import com.etherealcart.backend.model.Category;
 import com.etherealcart.backend.model.Product;
+import com.etherealcart.backend.repository.CategoryRepository;
 import com.etherealcart.backend.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 @Service
+@Transactional
 public class ProductService {
+
     @Autowired
     private ProductRepository productRepository;
 
-    public Product createProduct(Product product) {
-        if (product.getName() == null || product.getPrice() == null || product.getStockQuantity() == null) {
-            throw new IllegalArgumentException("Name, price, and stock quantity are required");
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    public ProductDTO createProduct(ProductDTO productDTO) {
+        if (productDTO.getName() == null || productDTO.getPrice() == null || productDTO.getCategoryId() == null) {
+            throw ExceptionFactory.missingProductFields("Name, price, and category are required");
         }
-        return productRepository.save(product);
-    }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
-    }
-
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
-    }
-
-    public Product updateProduct(Long id, Product updatedProduct) {
-        Optional<Product> existingProduct = productRepository.findById(id);
-        if (existingProduct.isEmpty()) {
-            throw new IllegalArgumentException("Product not found with ID: " + id);
+        if (productDTO.getPrice() != null && productDTO.getPrice() <= 0) {
+            throw ExceptionFactory.invalidProductPrice(productDTO.getPrice());
         }
-        Product product = existingProduct.get();
-        product.setName(updatedProduct.getName() != null ? updatedProduct.getName() : product.getName());
-        product.setPrice(updatedProduct.getPrice() != null ? updatedProduct.getPrice() : product.getPrice());
-        product.setDescription(updatedProduct.getDescription() != null ? updatedProduct.getDescription() : product.getDescription());
-        product.setStockQuantity(updatedProduct.getStockQuantity() != null ? updatedProduct.getStockQuantity() : product.getStockQuantity());
-        return productRepository.save(product);
-    }
 
-    public void deleteProduct(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw new IllegalArgumentException("Product not found with ID: " + id);
+        if (!categoryRepository.existsById(productDTO.getCategoryId())) {
+            throw ExceptionFactory.categoryNotFound(productDTO.getCategoryId());
         }
-        productRepository.deleteById(id);
+
+        // Get category entity
+        Category category = categoryRepository.findById(productDTO.getCategoryId())
+                .orElseThrow(() -> ExceptionFactory.categoryNotFound(productDTO.getCategoryId()));
+
+        // Convert DTO to entity with category
+        Product product = ProductMapper.toEntity(productDTO, category);
+        Product saved = productRepository.save(product);
+        return ProductMapper.toDTO(saved);
     }
 
-    // New functionality for frontend integration
-
-    public List<Product> getFeaturedProducts() {
-        return productRepository.findByFeaturedTrue();
+    public List<ProductDTO> getAllProducts() {
+        return productRepository.findAll()
+                .stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public List<Product> getProductsByCategorySlug(String slug) {
-        return productRepository.findByCategorySlug(slug);
+    public Optional<ProductDTO> getProductById(Long id) {
+        return productRepository.findById(id).map(ProductMapper::toDTO);
     }
 
-    public List<Product> getRelatedProducts(Long productId) {
+    public Optional<ProductDTO> updateProduct(Long id, ProductDTO productDTO) {
+        return productRepository.findById(id)
+                .map(existing -> {
+                    // Update basic fields
+                    if (productDTO.getName() != null) {
+                        existing.setName(productDTO.getName());
+                    }
+                    if (productDTO.getPrice() != null) {
+                        if (productDTO.getPrice() <= 0) {
+                            throw ExceptionFactory.invalidProductPrice(productDTO.getPrice());
+                        }
+                        existing.setPrice(productDTO.getPrice());
+                    }
+                    if (productDTO.getDescription() != null) {
+                        existing.setDescription(productDTO.getDescription());
+                    }
+                    if (productDTO.getStock() != null) {
+                        existing.setStockQuantity(productDTO.getStock());
+                    }
+                    if (productDTO.getImages() != null) {
+                        existing.setImages(productDTO.getImages());
+                    }
+                    if (productDTO.getFeatured() != null) {
+                        existing.setFeatured(productDTO.getFeatured());
+                    }
+                    if (productDTO.getInStock() != null) {
+                        existing.setInStock(productDTO.getInStock());
+                    }
+                    if (productDTO.getTags() != null) {
+                        existing.setTags(productDTO.getTags());
+                    }
+                    if (productDTO.getSpecifications() != null) {
+                        existing.setSpecifications(productDTO.getSpecifications());
+                    }
+                    
+                    // Handle category change if provided
+                    if (productDTO.getCategoryId() != null && !productDTO.getCategoryId().equals(existing.getCategory().getId())) {
+                        Category newCategory = categoryRepository.findById(productDTO.getCategoryId())
+                                .orElseThrow(() -> ExceptionFactory.categoryNotFound(productDTO.getCategoryId()));
+                        existing.setCategory(newCategory);
+                    }
+                    
+                    return ProductMapper.toDTO(productRepository.save(existing));
+                });
+    }
+
+    public boolean deleteProduct(Long id) {
+        if (productRepository.existsById(id)) {
+            productRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
+    public List<ProductDTO> getFeaturedProducts() {
+        return productRepository.findByFeaturedTrue()
+                .stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDTO> getProductsByCategorySlug(String slug) {
+        return productRepository.findByCategorySlug(slug)
+                .stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDTO> getRelatedProducts(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + productId));
-        return productRepository.findRelatedProducts(product.getCategory().getId(), productId);
+                .orElseThrow(() -> ExceptionFactory.productNotFound(productId));
+        return productRepository.findRelatedProducts(product.getCategory().getId(), productId)
+                .stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public List<Product> searchProducts(String query) {
-        return productRepository.searchProducts(query);
+    public List<ProductDTO> searchProducts(String query) {
+        return productRepository.searchProducts(query)
+                .stream()
+                .map(ProductMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public Page<Product> findWithFilters(Long categoryId, Double minPrice, Double maxPrice,
-                                         Boolean inStock, Boolean featured, Integer page, Integer size, String sort) {
+    public Page<ProductDTO> findWithFilters(Long categoryId, Double minPrice, Double maxPrice,
+                                            Boolean inStock, Boolean featured,
+                                            Integer page, Integer size, String sort) {
         Pageable pageable = PageRequest.of(
                 page != null ? page : 0,
                 size != null ? size : 20,
                 sort != null ? Sort.by(sort) : Sort.unsorted()
         );
-        return productRepository.findProductsWithFilters(categoryId, minPrice, maxPrice, inStock, featured, pageable);
+        return productRepository.findProductsWithFilters(categoryId, minPrice, maxPrice, inStock, featured, pageable)
+                .map(ProductMapper::toDTO);
     }
 }

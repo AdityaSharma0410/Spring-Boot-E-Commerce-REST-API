@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "product")
@@ -25,6 +26,7 @@ public class Product {
     @Column(length = 1000)
     private String description;
 
+    @JsonProperty("stock")
     @Column(nullable = false)
     private Integer stockQuantity;
 

@@ -21,14 +21,30 @@ public class ErrorResponseFactoryRegistry {
             InvalidUserIdErrorFactory invalidUserIdFactory,
             UserNotFoundErrorFactory userNotFoundFactory,
             MissingRequiredFieldsErrorFactory missingFieldsFactory,
-            InvalidEmailFormatErrorFactory invalidEmailFactory) {  // <--- new
+            InvalidEmailFormatErrorFactory invalidEmailFactory,
+            InvalidProductIdFactory invalidProductIdFactory,
+            ProductNotFoundFactory productNotFoundFactory,
+            MissingProductFieldsFactory missingProductFieldsFactory,
+            InvalidCategoryIdFactory invalidCategoryIdFactory,
+            CategoryNotFoundFactory categoryNotFoundFactory,
+            MissingCategoryFieldsFactory missingCategoryFieldsFactory,
+            DuplicateCategorySlugErrorFactory duplicateCategorySlugFactory,
+            InvalidProductPriceFactory invalidProductPriceFactory   // <--- add here
+    ) {
         factories.put(DuplicateEmailException.class, duplicateEmailFactory);
         factories.put(InvalidUserIdException.class, invalidUserIdFactory);
         factories.put(UserNotFoundException.class, userNotFoundFactory);
         factories.put(MissingRequiredFieldsException.class, missingFieldsFactory);
-        factories.put(InvalidEmailFormatException.class, invalidEmailFactory); // <--- new
+        factories.put(InvalidEmailFormatException.class, invalidEmailFactory);
+        factories.put(InvalidProductIdException.class, invalidProductIdFactory);
+        factories.put(ProductNotFoundException.class, productNotFoundFactory);
+        factories.put(MissingProductFieldsException.class, missingProductFieldsFactory);
+        factories.put(InvalidCategoryIdException.class, invalidCategoryIdFactory);
+        factories.put(CategoryNotFoundException.class, categoryNotFoundFactory);
+        factories.put(MissingCategoryFieldsException.class, missingCategoryFieldsFactory);
+        factories.put(DuplicateCategorySlugException.class, duplicateCategorySlugFactory);
+        factories.put(InvalidProductPriceException.class, invalidProductPriceFactory); // <--- register
     }
-
 
     public ApiError createErrorResponse(Exception ex, HttpServletRequest request) {
         ErrorResponseFactory factory = factories.getOrDefault(

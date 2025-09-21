@@ -1,6 +1,6 @@
 package com.etherealcart.backend.controller.admin;
 
-import com.etherealcart.backend.model.Category;
+import com.etherealcart.backend.dto.CategoryDTO;
 import com.etherealcart.backend.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,24 +16,24 @@ public class AdminCategoryController {
     private CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<Category>> list() {
+    public ResponseEntity<List<CategoryDTO>> list() {
         return ResponseEntity.ok(categoryService.list());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> get(@PathVariable Long id) {
-        Optional<Category> c = categoryService.get(id);
+    public ResponseEntity<CategoryDTO> get(@PathVariable Long id) {
+        Optional<CategoryDTO> c = categoryService.get(id);
         return c.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    public ResponseEntity<Category> create(@RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.create(category));
+    public ResponseEntity<CategoryDTO> create(@RequestBody CategoryDTO categoryDTO) {
+        return ResponseEntity.ok(categoryService.create(categoryDTO));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.update(id, category));
+    public ResponseEntity<CategoryDTO> update(@PathVariable Long id, @RequestBody CategoryDTO categoryDTO) {
+        return ResponseEntity.ok(categoryService.update(id, categoryDTO));
     }
 
     @DeleteMapping("/{id}")

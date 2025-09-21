@@ -1,13 +1,14 @@
 package com.etherealcart.backend.controller;
 
-import com.etherealcart.backend.model.Category;
+import com.etherealcart.backend.dto.CategoryDTO;
+import com.etherealcart.backend.exceptions.ExceptionFactory;
+import com.etherealcart.backend.exceptions.CategoryNotFoundException;
 import com.etherealcart.backend.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/categories")
@@ -16,47 +17,59 @@ public class CategoryController {
     private CategoryService categoryService;
 
     @PostMapping
-    public ResponseEntity<Category> create(@RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.create(category));
+    public ResponseEntity<CategoryDTO> create(@RequestBody CategoryDTO categoryDTO) {
+        CategoryDTO saved = categoryService.create(categoryDTO);
+        return ResponseEntity.ok(saved);
     }
 
     @GetMapping
-    public ResponseEntity<List<Category>> list() {
+    public ResponseEntity<List<CategoryDTO>> list() {
         return ResponseEntity.ok(categoryService.list());
     }
 
-    @GetMapping("/with-products")
-    public ResponseEntity<List<Category>> listWithProducts() {
-        return ResponseEntity.ok(categoryService.listWithProducts());
-    }
-
     @GetMapping("/{id}")
-    public ResponseEntity<Category> get(@PathVariable Long id) {
-        Optional<Category> category = categoryService.get(id);
-        return category.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public ResponseEntity<CategoryDTO> get(@PathVariable String id) {
+        try {
+            Long categoryId = Long.parseLong(id);
+            return categoryService.get(categoryId)
+                    .map(ResponseEntity::ok)
+                    .orElseThrow(() -> ExceptionFactory.categoryNotFound(categoryId));
+        } catch (NumberFormatException ex) {
+            throw ExceptionFactory.invalidCategoryId(id);
+        }
     }
 
     @GetMapping("/slug/{slug}")
-    public ResponseEntity<Category> getBySlug(@PathVariable String slug) {
-        Optional<Category> category = categoryService.getBySlug(slug);
-        return category.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<Category>> search(@RequestParam String name) {
-        return ResponseEntity.ok(categoryService.searchByName(name));
+    public ResponseEntity<CategoryDTO> getBySlug(@PathVariable String slug) {
+        return categoryService.getBySlug(slug)
+                .map(ResponseEntity::ok)
+                .orElseThrow(() -> ExceptionFactory.categoryNotFound(slug));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> update(@PathVariable Long id, @RequestBody Category category) {
-        return ResponseEntity.ok(categoryService.update(id, category));
+    public ResponseEntity<CategoryDTO> update(@PathVariable String id, @RequestBody CategoryDTO categoryDTO) {
+        try {
+            Long categoryId = Long.parseLong(id);
+            CategoryDTO updated = categoryService.update(categoryId, categoryDTO);
+            return ResponseEntity.ok(updated);
+        } catch (NumberFormatException ex) {
+            throw ExceptionFactory.invalidCategoryId(id);
+        } catch (CategoryNotFoundException ex) {
+            throw ex; // handled globally
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        categoryService.delete(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        try {
+            Long categoryId = Long.parseLong(id);
+            if (categoryService.get(categoryId).isEmpty()) {
+                throw ExceptionFactory.categoryNotFound(categoryId);
+            }
+            categoryService.delete(categoryId);
+            return ResponseEntity.noContent().build();
+        } catch (NumberFormatException ex) {
+            throw ExceptionFactory.invalidCategoryId(id);
+        }
     }
 }
-
-

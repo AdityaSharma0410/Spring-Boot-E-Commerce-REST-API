@@ -1,69 +1,80 @@
 package com.etherealcart.backend.controller;
 
-
-import com.etherealcart.backend.model.Product;
+import com.etherealcart.backend.dto.ProductDTO;
 import com.etherealcart.backend.service.ProductService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import jakarta.validation.Valid;
+import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
-    @Autowired
-    private ProductService productService;
 
-    Object obj = new Object();
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
 
     @PostMapping
-    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
-        return ResponseEntity.ok(productService.createProduct(product));
+    public ResponseEntity<ProductDTO> createProduct(@Valid @RequestBody ProductDTO productDTO) {
+        ProductDTO savedProduct = productService.createProduct(productDTO);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedProduct.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(savedProduct);
     }
 
     @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
+    public ResponseEntity<List<ProductDTO>> getAllProducts() {
         return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        Optional<Product> product = productService.getProductById(id);
-        return product.map(ResponseEntity::ok)
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long id) {
+        return productService.getProductById(id)
+                .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
-        return ResponseEntity.ok(productService.updateProduct(id, product));
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO productDTO) {
+        return productService.updateProduct(id, productDTO)
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
+        if (productService.deleteProduct(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
-    // New endpoints for frontend integration
     @GetMapping("/featured")
-    public ResponseEntity<List<Product>> getFeaturedProducts() {
+    public ResponseEntity<List<ProductDTO>> getFeaturedProducts() {
         return ResponseEntity.ok(productService.getFeaturedProducts());
     }
 
     @GetMapping("/category/{slug}")
-    public ResponseEntity<List<Product>> getByCategorySlug(@PathVariable String slug) {
+    public ResponseEntity<List<ProductDTO>> getByCategorySlug(@PathVariable String slug) {
         return ResponseEntity.ok(productService.getProductsByCategorySlug(slug));
     }
 
     @GetMapping("/related/{id}")
-    public ResponseEntity<List<Product>> getRelated(@PathVariable Long id) {
+    public ResponseEntity<List<ProductDTO>> getRelated(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getRelatedProducts(id));
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<Product>> search(@RequestParam String q) {
+    public ResponseEntity<List<ProductDTO>> search(@RequestParam String q) {
         return ResponseEntity.ok(productService.searchProducts(q));
     }
 
@@ -74,10 +85,12 @@ public class ProductController {
             @RequestParam(required = false) Double maxPrice,
             @RequestParam(required = false) Boolean inStock,
             @RequestParam(required = false) Boolean featured,
-            @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size,
-            @RequestParam(required = false) String sort
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(defaultValue = "id,asc") String sort
     ) {
-        return ResponseEntity.ok(productService.findWithFilters(categoryId, minPrice, maxPrice, inStock, featured, page, size, sort));
+        return ResponseEntity.ok(
+                productService.findWithFilters(categoryId, minPrice, maxPrice, inStock, featured, page, size, sort)
+        );
     }
 }
