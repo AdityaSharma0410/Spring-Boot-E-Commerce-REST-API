@@ -1,9 +1,10 @@
 package com.etherealcart.backend.service;
 
-import com.etherealcart.backend.exceptions.DuplicateEmailException;
+import com.etherealcart.backend.dto.UserUpdateRequest;
 import com.etherealcart.backend.exceptions.ExceptionFactory;
 import com.etherealcart.backend.model.User;
 import com.etherealcart.backend.repository.UserRepository;
+import com.etherealcart.backend.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +16,8 @@ import java.util.regex.Pattern;
 @Transactional
 public class UserService {
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
 
     @Autowired
     private UserRepository userRepository;
@@ -26,7 +28,6 @@ public class UserService {
             throw ExceptionFactory.missingFields("Email, first name, last name, and password are required");
         }
 
-        // Email format validation
         if (!EMAIL_PATTERN.matcher(user.getEmail()).matches()) {
             throw ExceptionFactory.invalidEmailFormat(user.getEmail());
         }
@@ -46,10 +47,23 @@ public class UserService {
         return userRepository.findById(id);
     }
 
+    // Overload: Update using DTO request
+    public User updateUser(Long id, UserUpdateRequest request) {
+        Optional<User> existingUser = userRepository.findById(id);
+        if (existingUser.isEmpty()) {
+            throw ExceptionFactory.userNotFound(id);
+        }
+
+        User user = existingUser.get();
+        UserMapper.updateEntity(user, request);
+        return userRepository.save(user);
+    }
+
+    // Existing method still useful for admin role update
     public User updateUser(Long id, User updatedUser) {
         Optional<User> existingUser = userRepository.findById(id);
         if (existingUser.isEmpty()) {
-            throw ExceptionFactory.userNotFound(id); // <-- use factory here
+            throw ExceptionFactory.userNotFound(id);
         }
 
         User user = existingUser.get();
@@ -59,6 +73,12 @@ public class UserService {
 
         if (updatedUser.getPassword() != null) {
             user.setPassword(updatedUser.getPassword());
+        }
+        if (updatedUser.getAvatar() != null) {
+            user.setAvatar(updatedUser.getAvatar());
+        }
+        if (updatedUser.getRole() != null) {
+            user.setRole(updatedUser.getRole());
         }
 
         return userRepository.save(user);
