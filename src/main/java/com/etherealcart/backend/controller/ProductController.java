@@ -2,6 +2,7 @@ package com.etherealcart.backend.controller;
 
 import com.etherealcart.backend.dto.ProductDTO;
 import com.etherealcart.backend.service.ProductService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -14,6 +15,7 @@ import java.util.List;
 @RequestMapping("/api/products")
 public class ProductController {
 
+    @Autowired
     private final ProductService productService;
 
     public ProductController(ProductService productService) {

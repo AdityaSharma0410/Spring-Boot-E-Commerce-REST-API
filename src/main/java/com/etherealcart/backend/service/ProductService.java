@@ -30,27 +30,38 @@ public class ProductService {
     private CategoryRepository categoryRepository;
 
     public ProductDTO createProduct(ProductDTO productDTO) {
+        // --- Validate required fields ---
         if (productDTO.getName() == null || productDTO.getPrice() == null || productDTO.getCategoryId() == null) {
             throw ExceptionFactory.missingProductFields("Name, price, and category are required");
         }
 
-        if (productDTO.getPrice() != null && productDTO.getPrice() <= 0) {
+        // --- Validate price ---
+        if (productDTO.getPrice() <= 0) {
             throw ExceptionFactory.invalidProductPrice(productDTO.getPrice());
         }
 
+        // --- Validate category ID format ---
+        if (productDTO.getCategoryId() <= 0) {
+            throw ExceptionFactory.invalidCategoryId("Invalid category ID: " + productDTO.getCategoryId());
+        }
+
+        // --- Validate category existence ---
         if (!categoryRepository.existsById(productDTO.getCategoryId())) {
             throw ExceptionFactory.categoryNotFound(productDTO.getCategoryId());
         }
 
-        // Get category entity
+        // --- Fetch category entity ---
         Category category = categoryRepository.findById(productDTO.getCategoryId())
                 .orElseThrow(() -> ExceptionFactory.categoryNotFound(productDTO.getCategoryId()));
 
-        // Convert DTO to entity with category
+        // --- Map DTO -> Entity ---
         Product product = ProductMapper.toEntity(productDTO, category);
+
+        // --- Save & return DTO ---
         Product saved = productRepository.save(product);
         return ProductMapper.toDTO(saved);
     }
+
 
     public List<ProductDTO> getAllProducts() {
         return productRepository.findAll()
