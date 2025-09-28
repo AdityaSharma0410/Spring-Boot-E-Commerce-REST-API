@@ -2,6 +2,7 @@ package com.etherealcart.backend.service;
 
 import com.etherealcart.backend.dto.UpdateUserRoleRequestDTO;
 import com.etherealcart.backend.dto.UserUpdateRequestDTO;
+import com.etherealcart.backend.exception.UserFieldsException;
 import com.etherealcart.backend.mapper.UserMapper;
 import com.etherealcart.backend.model.User;
 import com.etherealcart.backend.repository.UserRepository;
@@ -23,6 +24,9 @@ public class UserService {
     // --- Create User ---
     public User createUser(User user) {
         // Validation is already handled by DTO annotations + @Valid
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new UserFieldsException("Email '" + user.getEmail() + "' is already in use");
+        }
         return userRepository.save(user);
     }
 
