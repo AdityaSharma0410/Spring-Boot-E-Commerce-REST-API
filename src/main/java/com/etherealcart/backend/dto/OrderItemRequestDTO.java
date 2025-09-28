@@ -1,6 +1,6 @@
 package com.etherealcart.backend.dto;
 
-public class OrderItemRequest {
+public class OrderItemRequestDTO {
     private Long productId;
     private Integer quantity;
 

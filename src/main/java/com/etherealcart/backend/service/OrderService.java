@@ -1,7 +1,7 @@
 package com.etherealcart.backend.service;
 
 
-import com.etherealcart.backend.dto.OrderItemRequest;
+import com.etherealcart.backend.dto.OrderItemRequestDTO;
 import com.etherealcart.backend.model.Order;
 import com.etherealcart.backend.model.OrderItem;
 import com.etherealcart.backend.model.Product;
@@ -30,7 +30,7 @@ public class OrderService {
     @Autowired
     private ProductRepository productRepository;
 
-    public Order createOrder(Long userId, List<OrderItemRequest> itemRequests) {
+    public Order createOrder(Long userId, List<OrderItemRequestDTO> itemRequests) {
         Optional<User> user = userRepository.findById(userId);
         if (user.isEmpty()) {
             throw new IllegalArgumentException("User not found with ID: " + userId);
@@ -41,7 +41,7 @@ public class OrderService {
         order.setStatus("PLACED");
         double totalAmount = 0.0;
 
-        for (OrderItemRequest itemRequest : itemRequests) {
+        for (OrderItemRequestDTO itemRequest : itemRequests) {
             Optional<Product> product = productRepository.findById(itemRequest.getProductId());
             if (product.isEmpty()) {
                 throw new IllegalArgumentException("Product not found with ID: " + itemRequest.getProductId());

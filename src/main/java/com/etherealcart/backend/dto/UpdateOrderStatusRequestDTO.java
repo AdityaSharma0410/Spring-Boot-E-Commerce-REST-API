@@ -1,6 +1,6 @@
 package com.etherealcart.backend.dto;
 
-public class UpdateOrderStatusRequest {
+public class UpdateOrderStatusRequestDTO {
     private String status;
 
     public String getStatus() { return status; }

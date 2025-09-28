@@ -2,7 +2,7 @@ package com.etherealcart.backend.controller;
 
 
 import com.etherealcart.backend.model.Order;
-import com.etherealcart.backend.dto.OrderItemRequest;
+import com.etherealcart.backend.dto.OrderItemRequestDTO;
 import com.etherealcart.backend.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<Order> createOrder(@RequestParam Long userId, @RequestBody List<OrderItemRequest> items) {
+    public ResponseEntity<Order> createOrder(@RequestParam Long userId, @RequestBody List<OrderItemRequestDTO> items) {
         return ResponseEntity.ok(orderService.createOrder(userId, items));
     }
 

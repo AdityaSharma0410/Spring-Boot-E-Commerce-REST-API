@@ -1,6 +1,6 @@
 package com.etherealcart.backend.controller.admin;
 
-import com.etherealcart.backend.dto.UpdateOrderStatusRequest;
+import com.etherealcart.backend.dto.UpdateOrderStatusRequestDTO;
 import com.etherealcart.backend.model.Order;
 import com.etherealcart.backend.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class AdminOrderController {
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<Order> updateStatus(@PathVariable Long id, @RequestBody UpdateOrderStatusRequest req) {
+    public ResponseEntity<Order> updateStatus(@PathVariable Long id, @RequestBody UpdateOrderStatusRequestDTO req) {
         if (req.getStatus() == null) {
             throw new IllegalArgumentException("Status is required");
         }

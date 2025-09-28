@@ -1,6 +1,6 @@
 package com.etherealcart.backend.dto;
 
-public class UpdateUserRoleRequest {
+public class UpdateUserRoleRequestDTO {
     private String role;
 
     public String getRole() { return role; }
