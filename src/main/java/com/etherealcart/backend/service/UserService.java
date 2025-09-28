@@ -10,7 +10,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @Transactional
@@ -23,7 +22,7 @@ public class UserService {
 
     // --- Create User ---
     public User createUser(User user) {
-        // Validation is already handled by DTO annotations + @Valid
+        // Check duplicate email
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new UserFieldsException("Email '" + user.getEmail() + "' is already in use");
         }
@@ -36,14 +35,15 @@ public class UserService {
     }
 
     // --- Get User by ID ---
-    public Optional<User> getUserById(Long id) {
-        return userRepository.findById(id);
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new UserFieldsException("User not found with ID: " + id));
     }
 
     // --- Update User ---
     public User updateUser(Long id, UserUpdateRequestDTO request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
+                .orElseThrow(() -> new UserFieldsException("User not found with ID: " + id));
         UserMapper.updateEntity(user, request);
         return userRepository.save(user);
     }
@@ -51,7 +51,7 @@ public class UserService {
     // --- Update Role ---
     public User updateUserRole(Long id, UpdateUserRoleRequestDTO request) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + id));
+                .orElseThrow(() -> new UserFieldsException("User not found with ID: " + id));
         UserMapper.updateRole(user, request);
         return userRepository.save(user);
     }
@@ -59,7 +59,7 @@ public class UserService {
     // --- Delete User ---
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new IllegalArgumentException("User not found with ID: " + id);
+            throw new UserFieldsException("User not found with ID: " + id);
         }
         userRepository.deleteById(id);
     }

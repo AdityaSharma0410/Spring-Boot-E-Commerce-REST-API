@@ -6,19 +6,22 @@ import com.etherealcart.backend.dto.UserUpdateRequestDTO;
 import com.etherealcart.backend.mapper.UserMapper;
 import com.etherealcart.backend.model.User;
 import com.etherealcart.backend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
-    @Autowired
-    private UserService userService;
+
+    private final UserService userService;
+
+    public AdminUserController(UserService userService) {
+        this.userService = userService;
+    }
 
     // --- List all users ---
     @GetMapping
@@ -33,16 +36,15 @@ public class AdminUserController {
     // --- Get user by ID ---
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> get(@PathVariable Long id) {
-        Optional<User> user = userService.getUserById(id);
-        return user.map(value -> ResponseEntity.ok(UserMapper.toDTO(value)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        User user = userService.getUserById(id); // UserFieldsException thrown if not found
+        return ResponseEntity.ok(UserMapper.toDTO(user));
     }
 
     // --- Update user (general info) ---
     @PutMapping("/{id}")
     public ResponseEntity<UserResponseDTO> update(
             @PathVariable Long id,
-            @RequestBody UserUpdateRequestDTO request) {
+            @Valid @RequestBody UserUpdateRequestDTO request) {
         User updated = userService.updateUser(id, request);
         return ResponseEntity.ok(UserMapper.toDTO(updated));
     }
@@ -51,7 +53,7 @@ public class AdminUserController {
     @PatchMapping("/{id}/role")
     public ResponseEntity<UserResponseDTO> updateRole(
             @PathVariable Long id,
-            @RequestBody UpdateUserRoleRequestDTO request) {
+            @Valid @RequestBody UpdateUserRoleRequestDTO request) {
         User updated = userService.updateUserRole(id, request);
         return ResponseEntity.ok(UserMapper.toDTO(updated));
     }

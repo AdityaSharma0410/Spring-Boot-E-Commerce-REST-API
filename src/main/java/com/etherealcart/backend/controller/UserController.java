@@ -41,9 +41,9 @@ public class UserController {
     // --- Get User by ID ---
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
-        return userService.getUserById(id)
-                .map(user -> ResponseEntity.ok(UserMapper.toDTO(user)))
-                .orElseGet(() -> ResponseEntity.notFound().build());
+        // Removed manual not-found handling
+        User user = userService.getUserById(id);
+        return ResponseEntity.ok(UserMapper.toDTO(user));
     }
 
     // --- Update User ---
