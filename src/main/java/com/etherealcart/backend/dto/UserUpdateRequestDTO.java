@@ -1,10 +1,18 @@
 package com.etherealcart.backend.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
+
 public class UserUpdateRequestDTO {
     private String firstName;
+
     private String lastName;
-    private String password; // optional update
-    private String avatar;
+
+    @Email(message = "Invalid email format")
+    private String email;
+
+    @Size(min = 6, message = "Password must be at least 6 characters")
+    private String password;    private String avatar;
 
     // Getters and Setters
     public String getFirstName() { return firstName; }

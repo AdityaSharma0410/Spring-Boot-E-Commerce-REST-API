@@ -4,7 +4,7 @@ import com.etherealcart.backend.dto.*;
 import com.etherealcart.backend.mapper.UserMapper;
 import com.etherealcart.backend.model.User;
 import com.etherealcart.backend.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,12 +14,15 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-    @Autowired
-    private UserService userService;
+
+    private final UserService userService;
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     // --- Create User ---
     @PostMapping
-    public ResponseEntity<UserResponseDTO> createUser(@RequestBody UserCreateRequestDTO request) {
+    public ResponseEntity<UserResponseDTO> createUser(@Valid @RequestBody UserCreateRequestDTO request) {
         User user = UserMapper.toEntity(request);
         User savedUser = userService.createUser(user);
         return ResponseEntity.ok(UserMapper.toDTO(savedUser));
@@ -45,18 +48,14 @@ public class UserController {
 
     // --- Update User ---
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> updateUser(
-            @PathVariable Long id,
-            @RequestBody UserUpdateRequestDTO request) {
+    public ResponseEntity<UserResponseDTO> updateUser(@PathVariable Long id,@Valid @RequestBody UserUpdateRequestDTO request) {
         User updatedUser = userService.updateUser(id, request);
         return ResponseEntity.ok(UserMapper.toDTO(updatedUser));
     }
 
     // --- Update Role ---
     @PatchMapping("/{id}/role")
-    public ResponseEntity<UserResponseDTO> updateUserRole(
-            @PathVariable Long id,
-            @RequestBody UpdateUserRoleRequestDTO request) {
+    public ResponseEntity<UserResponseDTO> updateUserRole(@PathVariable Long id,@Valid @RequestBody UpdateUserRoleRequestDTO request) {
         User updatedUser = userService.updateUserRole(id, request);
         return ResponseEntity.ok(UserMapper.toDTO(updatedUser));
     }
@@ -68,4 +67,3 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 }
-
